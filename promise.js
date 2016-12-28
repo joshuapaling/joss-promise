@@ -8,18 +8,32 @@ function Promise() {
   let value = undefined
   let reason = undefined
 
-  isFunction = function(val) {
+  const isFunction = function(val) {
     return (typeof val === 'function')
+  }
+
+  const callOnFulfilledsIfNeeded = function () {
+    if (state !== FULFILLED) {
+      return // it's already FULFILLED or REJECTED
+    }
+    onFulfilleds.forEach(f => {
+      setTimeout(function () {
+        f(value)
+      }, 0);
+    })
   }
 
   this.resolve = function(val) {
     if (state !== PENDING) {
+      console.log('inside resolve - BAILING OUT', state)
       return // it's already FULFILLED or REJECTED
     }
+    console.log('inside resolve, about to change state from ', state)
 
     state = FULFILLED
     value = val
-    onFulfilleds.forEach(f => f(value))
+    console.log('about to call onFulfilleds')
+    callOnFulfilledsIfNeeded()
   }
 
   this.reject = function(rsn) {
@@ -57,6 +71,7 @@ function Promise() {
     if (isFunction(onFulfilled)) {
       onFulfilleds.push(onFulfilled)
       if (state === FULFILLED ) {
+        console.log('Calling single onFulfilled because state is ', state)
         result = onFulfilled(value)
       }
     }
