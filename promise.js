@@ -3,6 +3,8 @@ function Promise() {
   const REJECTED  = 'REJECTED'
   const FULFILLED = 'FULFILLED'
   let state = PENDING
+  const onFulfilleds = [] // array of functions to call on fulfillment
+  const onRejecteds  = [] // array of functions to call on rejection
   let value = undefined
   let reason = undefined
 
@@ -13,19 +15,21 @@ function Promise() {
   this.resolve = function(val) {
     if (state !== PENDING) {
       return // it's already FULFILLED or REJECTED
-    } else {
-      state = FULFILLED
-      value = val
     }
+
+    state = FULFILLED
+    value = val
+    onFulfilleds.forEach(f => f(value))
   }
 
   this.reject = function(rsn) {
     if (state !== PENDING) {
       return // it's already FULFILLED or REJECTED
-    } else {
-      state = REJECTED
-      reason = rsn
     }
+    state = REJECTED
+    reason = rsn
+
+    onRejecteds.forEach(f => f(value))
   }
 
   // then must return a promise [3.3].
@@ -50,10 +54,18 @@ function Promise() {
       return promise2
     }
 
-    if (state === FULFILLED && isFunction(onFulfilled)) {
-      result = onFulfilled(value)
-    } else if (state === REJECTED && isFunction(onRejected)) {
-      result = onRejected(reason)
+    if (isFunction(onFulfilled)) {
+      onFulfilleds.push(onFulfilled)
+      if (state === FULFILLED ) {
+        result = onFulfilled(value)
+      }
+    }
+
+    if (isFunction(onRejected)) {
+      onRejecteds.push(onRejected)
+      if (state === REJECTED) {
+        result = onRejected(reason)
+      }
     }
 
     const promise2 = new Promise()
