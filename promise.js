@@ -13,26 +13,44 @@ function Promise() {
   }
 
   const callOnFulfilledsIfNeeded = function () {
-    if (state !== FULFILLED) {
-      return // it's already FULFILLED or REJECTED
-    }
-    onFulfilleds.forEach(f => {
-      setTimeout(function () {
-        f(value)
+    if (state !== FULFILLED) return
+    onFulfilleds.forEach(o => {
+      setTimeout(function() {
+        if (o.called) return // call each function once only
+        try {
+          o.called = true
+          result = o.func.call(undefined, value)
+          o.promise.resolve(result)
+        } catch (e) {
+          o.promise.reject(e)
+        }
+      }, 0);
+    })
+  }
+
+  const callOnRejectedsIfNeeded = function () {
+    if (state !== REJECTED) return
+    onRejecteds.forEach(o => {
+      setTimeout(function() {
+        if (o.called) return // call each function once only
+        try {
+          o.called = true
+          result = o.func.call(undefined, reason)
+          o.promise.resolve(result)
+        } catch (e) {
+          o.promise.reject(e)
+        }
       }, 0);
     })
   }
 
   this.resolve = function(val) {
     if (state !== PENDING) {
-      console.log('inside resolve - BAILING OUT', state)
       return // it's already FULFILLED or REJECTED
     }
-    console.log('inside resolve, about to change state from ', state)
 
     state = FULFILLED
     value = val
-    console.log('about to call onFulfilleds')
     callOnFulfilledsIfNeeded()
   }
 
@@ -43,7 +61,7 @@ function Promise() {
     state = REJECTED
     reason = rsn
 
-    onRejecteds.forEach(f => f(value))
+    callOnRejectedsIfNeeded()
   }
 
   // then must return a promise [3.3].
@@ -54,6 +72,7 @@ function Promise() {
   // If onRejected is not a function and promise1 is REJECTED, promise2 must be REJECTED with the same reason as promise1.
   this.then = function(onFulfilled, onRejected) {
     let result
+    const promise2 = new Promise()
     // If onFulfilled is not a function and promise1 is FULFILLED, promise2 must be FULFILLED with the same value as promise1.
     if (state === FULFILLED && !isFunction(onFulfilled)) {
       const promise2 = new Promise()
@@ -69,22 +88,23 @@ function Promise() {
     }
 
     if (isFunction(onFulfilled)) {
-      onFulfilleds.push(onFulfilled)
-      if (state === FULFILLED ) {
-        console.log('Calling single onFulfilled because state is ', state)
-        result = onFulfilled(value)
-      }
+      onFulfilleds.push({
+        promise: promise2,
+        func: onFulfilled,
+        called: false
+      })
+      callOnFulfilledsIfNeeded()
     }
 
     if (isFunction(onRejected)) {
-      onRejecteds.push(onRejected)
-      if (state === REJECTED) {
-        result = onRejected(reason)
-      }
+      onRejecteds.push({
+        promise: promise2,
+        func: onRejected,
+        called: false
+      })
+      callOnRejectedsIfNeeded()
     }
 
-    const promise2 = new Promise()
-    promise2.resolve(result)
     return promise2
   }
 }
