@@ -16,10 +16,16 @@ function Promise() {
     if (state !== FULFILLED) return
     onFulfilleds.forEach(o => {
       setTimeout(function() {
-        if (o.called) return // call each function once only
+        if (o.handled) return // call each function once only
+
+        if (!isFunction(o.onFulfilled)) {
+          o.promise.resolve(value)
+          return
+        }
+
         try {
-          o.called = true
-          result = o.func.call(undefined, value)
+          o.handled = true
+          result = o.onFulfilled.call(undefined, value)
           o.promise.resolve(result)
         } catch (e) {
           o.promise.reject(e)
@@ -32,10 +38,16 @@ function Promise() {
     if (state !== REJECTED) return
     onRejecteds.forEach(o => {
       setTimeout(function() {
-        if (o.called) return // call each function once only
+        if (o.handled) return // call each function once only
+
+        if (!isFunction(o.onRejected)) {
+          o.promise.reject(reason)
+          return
+        }
+
         try {
-          o.called = true
-          result = o.func.call(undefined, reason)
+          o.handled = true
+          result = o.onRejected.call(undefined, reason)
           o.promise.resolve(result)
         } catch (e) {
           o.promise.reject(e)
@@ -74,36 +86,36 @@ function Promise() {
     let result
     const promise2 = new Promise()
     // If onFulfilled is not a function and promise1 is FULFILLED, promise2 must be FULFILLED with the same value as promise1.
-    if (state === FULFILLED && !isFunction(onFulfilled)) {
-      const promise2 = new Promise()
-      promise2.resolve(value)
-      return promise2
-    }
+    // if (state === FULFILLED && !isFunction(onFulfilled)) {
+    //   const promise2 = new Promise()
+    //   promise2.resolve(value)
+    //   return promise2
+    // }
 
     // If onRejected is not a function and promise1 is REJECTED, promise2 must be REJECTED with the same reason as promise1.
-    if (state === REJECTED && !isFunction(onRejected)) {
-      const promise2 = new Promise()
-      promise2.reject(reason)
-      return promise2
-    }
+    // if (state === REJECTED && !isFunction(onRejected)) {
+    //   const promise2 = new Promise()
+    //   promise2.reject(reason)
+    //   return promise2
+    // }
 
-    if (isFunction(onFulfilled)) {
+    // if (isFunction(onFulfilled)) {
       onFulfilleds.push({
         promise: promise2,
-        func: onFulfilled,
-        called: false
+        onFulfilled: onFulfilled,
+        handled: false
       })
       callOnFulfilledsIfNeeded()
-    }
+    // }
 
-    if (isFunction(onRejected)) {
+    // if (isFunction(onRejected)) {
       onRejecteds.push({
         promise: promise2,
-        func: onRejected,
-        called: false
+        onRejected: onRejected,
+        handled: false
       })
       callOnRejectedsIfNeeded()
-    }
+    // }
 
     return promise2
   }
