@@ -3,6 +3,7 @@ function Promise() {
   const REJECTED  = 'REJECTED'
   const FULFILLED = 'FULFILLED'
   let state = PENDING
+  let fulfilledWithPromise = false // true if this promise has been fulfilled with another promise (and therefore remains PENDING until the other promise is also fulfilled)
   const onFulfilleds = [] // array of functions to call on fulfillment
   const onRejecteds  = [] // array of functions to call on rejection
   let value = undefined
@@ -61,6 +62,33 @@ function Promise() {
       return // it's already FULFILLED or REJECTED
     }
 
+    if (fulfilledWithPromise) {
+      return // can't fulfill it again
+    }
+
+    if (this === val) {
+      this.reject(new TypeError())
+      return
+    }
+
+    if (val.constructor === Promise) {
+      that = this
+      val.then(
+        function onFulfilled(theVal) {
+          state = FULFILLED
+          value = val
+          callOnFulfilledsIfNeeded()
+        },
+        function onRejected(theReason) {
+          state = REJECTED
+          reason = rsn
+          callOnRejectedsIfNeeded()
+        }
+      )
+      fulfilledWithPromise = true
+      return
+    }
+
     state = FULFILLED
     value = val
     callOnFulfilledsIfNeeded()
@@ -70,9 +98,13 @@ function Promise() {
     if (state !== PENDING) {
       return // it's already FULFILLED or REJECTED
     }
+
+    if (fulfilledWithPromise) {
+      return // can't reject it again
+    }
+
     state = REJECTED
     reason = rsn
-
     callOnRejectedsIfNeeded()
   }
 
