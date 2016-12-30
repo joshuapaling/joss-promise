@@ -76,12 +76,12 @@ function Promise() {
       val.then(
         function onFulfilled(theVal) {
           state = FULFILLED
-          value = val
+          value = theVal
           callOnFulfilledsIfNeeded()
         },
         function onRejected(theReason) {
           state = REJECTED
-          reason = rsn
+          reason = theReason
           callOnRejectedsIfNeeded()
         }
       )
