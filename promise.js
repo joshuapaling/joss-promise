@@ -100,7 +100,7 @@ function Promise() {
     }
 
     if (fulfilledWithPromise) {
-      return // can't reject it again
+      // return // can't reject it again
     }
 
     state = REJECTED
