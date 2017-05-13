@@ -63,7 +63,7 @@ function Promise() {
     }
 
     if (fulfilledWithPromise) {
-      return // can't fulfill it again
+      // return // can't fulfill it again
     }
 
     if (this === val) {
