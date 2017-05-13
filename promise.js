@@ -74,16 +74,8 @@ function Promise() {
     if (val && 'then' in val) {
       that = this
       val.then(
-        function onFulfilled(theVal) {
-          state = FULFILLED
-          value = theVal
-          callOnFulfilledsIfNeeded()
-        },
-        function onRejected(theReason) {
-          state = REJECTED
-          reason = theReason
-          callOnRejectedsIfNeeded()
-        }
+        that.resolve,
+        that.reject
       )
       fulfilledWithPromise = true
       return
