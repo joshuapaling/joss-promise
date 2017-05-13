@@ -71,7 +71,7 @@ function Promise() {
       return
     }
 
-    if (val && val.constructor === Promise) {
+    if (val && 'then' in val) {
       that = this
       val.then(
         function onFulfilled(theVal) {
