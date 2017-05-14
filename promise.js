@@ -22,6 +22,10 @@ function Promise() {
     return isFunction(val) || isObject(val)
   }
 
+  const hasThenFunction = function(val) {
+    return 'then' in val && isFunction(val.then)
+  }
+
   const callOnFulfilledsIfNeeded = function () {
     if (state !== FULFILLED) return
     onFulfilleds.forEach(o => {
@@ -81,7 +85,7 @@ function Promise() {
     }
 
 
-    if (isObjectOrFunction(val) && 'then' in val) {
+    if (isObjectOrFunction(val) && hasThenFunction(val)) {
       that = this
       val.then(
         that.resolve,
