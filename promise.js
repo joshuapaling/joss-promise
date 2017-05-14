@@ -22,10 +22,6 @@ function Promise() {
     return isFunction(val) || isObject(val)
   }
 
-  const hasThenFunction = function(val) {
-    return 'then' in val && isFunction(val.then)
-  }
-
   const callOnFulfilledsIfNeeded = function () {
     if (state !== FULFILLED) return
     onFulfilleds.forEach(o => {
@@ -85,14 +81,24 @@ function Promise() {
     }
 
 
-    if (isObjectOrFunction(val) && hasThenFunction(val)) {
-      that = this
-      val.then(
-        that.resolve,
-        that.reject
-      )
-      fulfilledWithPromise = true
-      return
+    try {
+      if (isObjectOrFunction(val) && 'then' in val) {
+        that = this
+        val.then(
+          that.resolve,
+          that.reject
+        )
+        fulfilledWithPromise = true
+        return
+      }
+    } catch(err) {
+      if (err instanceof TypeError) {
+        // Woops, `then` was not a function.
+        // Let's just continue and resolve this as if it wasn't a promise then.
+      } else {
+        // Didn't expect to get here? Re-raise the error.
+        throw err
+      }
     }
 
     state = FULFILLED
