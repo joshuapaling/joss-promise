@@ -13,6 +13,15 @@ function Promise() {
     return (typeof val === 'function')
   }
 
+  const isObject = function(val) {
+    if (val === null) return false // special case. typeof null returns "object", but that's a bug. Null is a primitive.
+    return (typeof val === 'object')
+  }
+
+  const isObjectOrFunction = function(val) {
+    return isFunction(val) || isObject(val)
+  }
+
   const callOnFulfilledsIfNeeded = function () {
     if (state !== FULFILLED) return
     onFulfilleds.forEach(o => {
@@ -71,7 +80,8 @@ function Promise() {
       return
     }
 
-    if (val && 'then' in val) {
+
+    if (isObjectOrFunction(val) && 'then' in val) {
       that = this
       val.then(
         that.resolve,
